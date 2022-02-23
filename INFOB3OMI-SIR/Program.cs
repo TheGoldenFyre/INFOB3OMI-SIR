@@ -1,4 +1,5 @@
-﻿
+﻿using OSI
+
 class Program
 {
     enum EntityState
@@ -17,45 +18,7 @@ class Program
 
     static void Main(String[] args)
     {
-        Console.CursorVisible = false;
-
-        EntityState[,] states = new EntityState[50,10];
-        for (int i = 0; i < states.GetLength(0); i++)
-        {
-            for (int j = 0; j < states.GetLength(1); j++)
-            {
-                states[i,j] = EntityState.Susceptible;
-
-            }
-        }
-
-        states[12, 0]=EntityState.Infectious;
-        states[24, 0]=EntityState.Obstruction;
-        states[24, 1]=EntityState.Obstruction;
-        states[24, 2]=EntityState.Obstruction;
-        states[24, 3]=EntityState.Obstruction;
-        states[24, 4]=EntityState.Obstruction;
-        states[25, 4]=EntityState.Obstruction;
-        states[26, 4]=EntityState.Obstruction;
-        states[27, 4]=EntityState.Obstruction;
-        //states[24, 5]=EntityState.Obstruction;
-        states[24, 6]=EntityState.Obstruction;
-        states[25, 6]=EntityState.Obstruction;
-        states[26, 6]=EntityState.Obstruction;
-        states[27, 6]=EntityState.Obstruction;
-        states[24, 7]=EntityState.Obstruction;
-        states[24, 8]=EntityState.Obstruction;
-        states[24, 9]=EntityState.Obstruction;
-        //states[36, 0]=EntityState.Infectious;
-
-
-        while (true)
-        {
-            Iterate(ref states);
-            DisplayStates(states);
-            Console.ReadKey(true);
-            //Console.Clear();
-        }
+        OSIRModel om = new OSIRModel()
 
     }
 
