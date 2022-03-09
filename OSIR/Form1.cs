@@ -2,7 +2,7 @@ namespace OSIR
 {
     public partial class Form1 : Form
     {
-        static OSIRModel model = new OSIRModel(200, 200, 0.03, 0.10, 0.03);
+        static OSIRModel model = new OSIRModel(80, 80, 0.03, 0.10, 0.03);
 
         Label label = new Label();
         Button btn = new Button();
@@ -14,10 +14,11 @@ namespace OSIR
         public Form1()
         {
             model.AddInfections(10);
-            this.Size = new Size(400, 400);
+            model.AddObstructions(10);
+            this.Size = new Size(model.GetBitmap().Width, model.GetBitmap().Height);
             pb.Location = new Point(0, 0);
             pb.Visible = true;
-            pb.Size = new Size(400, 400);
+            pb.Size = new Size(model.GetBitmap().Width, model.GetBitmap().Height);
             btn.Location = new Point(5, 5);
             btn.Text = "Advance";
             btn.Size = new Size(100, 25);

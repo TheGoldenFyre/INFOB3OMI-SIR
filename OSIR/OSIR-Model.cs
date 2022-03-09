@@ -21,6 +21,7 @@ namespace OSIR
 
         private int width;
         private int height;
+        private int SDIM;
         private double CHANCE_INF;
         private double CHANCE_REC;
         private double CHANCE_LIM;
@@ -31,6 +32,7 @@ namespace OSIR
         {
             width = w;
             height = h;
+            SDIM = 7;
             state = new State[width, height];
             for (int i = 0; i < width; i++)
                 for (int j = 0; j < height; j++)
@@ -42,7 +44,7 @@ namespace OSIR
             CHANCE_LIM = clim;
 
             rnd = new Random();
-            bmp = new Bitmap(w * 2, h * 2);
+            bmp = new Bitmap(w * SDIM, h * SDIM);
 
         }
 
@@ -96,7 +98,7 @@ namespace OSIR
         {
             for (int i = 0; i < width; i++)
             {
-                for (int j =0; j < height; j++)
+                for (int j = 0; j < height; j++)
                 {
                     Color c;
                     switch (state[i, j])
@@ -107,13 +109,63 @@ namespace OSIR
                         default: c = Color.Purple; break;
                     }
 
-                    bmp.SetPixel(2*i, 2*j, c);
-                    bmp.SetPixel(2*i, 2*j + 1, c);
-                    bmp.SetPixel(2*i + 1, 2*j, c);
-                    bmp.SetPixel(2*i + 1, 2*j + 1, c);
+                    int x = i * SDIM;
+                    int y = j * SDIM;
+                    
+
+                    for (int dx = 0; dx < SDIM - 2; dx++)
+                        for (int dy = 0; dy < SDIM - 2; dy++)
+                            bmp.SetPixel(x + dx + 1, y + dy + 1, c);
+
+                    bmp.SetPixel(x, y, obstruction[i, j, 0] ? Color.Black : Color.Gray);
+                    bmp.SetPixel(x + SDIM - 1, y, obstruction[i, j, 2] ? Color.Black : Color.Gray);
+                    bmp.SetPixel(x, y + SDIM - 1, obstruction[i, j, 6] ? Color.Black : Color.Gray);
+                    bmp.SetPixel(x + SDIM - 1, y + SDIM - 1, obstruction[i, j, 8] ? Color.Black : Color.Gray);
+                    for (int dx = 0; dx < SDIM - 2; dx++)
+                    {
+                        bmp.SetPixel(x + dx + 1, y, obstruction[i, j, 1] ? Color.Black : Color.Gray);
+                        bmp.SetPixel(x + dx + 1, y + SDIM - 1, obstruction[i, j, 7] ? Color.Black : Color.Gray);
+                    }
+                    for (int dy = 0; dy < SDIM - 2; dy++)
+                    {
+                        bmp.SetPixel(x, y + dy + 1, obstruction[i, j, 3] ? Color.Black : Color.Gray);
+                        bmp.SetPixel(x + SDIM - 1, y + dy + 1, obstruction[i, j, 5] ? Color.Black : Color.Gray);
+                    }
                 }
             }
             return bmp;
+        }
+
+        // Blocks off a certain percentage of connections
+        public void AddObstructions(double p)
+        {
+            int c = (int)(width * height * 4 * p);
+            AddObstructions(c);
+        }
+
+        public void AddObstructions(int c)
+        {
+            for (int i = 0; i < c; i++)
+            {
+                while (true)
+                {
+                    int rndX = (int)(rnd.NextDouble() * width);
+                    int rndY = (int)(rnd.NextDouble() * height);
+                    int rndN = (int)(rnd.NextDouble() * 8);
+                    if (rndN > 3) rndN += 1; // We want to skip the center tile, so +1.
+
+                    if (!obstruction[rndX, rndY, rndN])
+                    {
+                        obstruction[rndX, rndY, rndN] = true;
+                        // we must now also find the neighbour that we need to set to true: 
+                        int dx = rndN % 3 - 1;
+                        int dy = rndN / 3 - 1;
+                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height) 
+                            obstruction[rndX+dx, rndY + dy, 8-rndN] = true;
+                        break;
+                    }
+                }
+            }
         }
 
         // Infects a certain percentage of the population
