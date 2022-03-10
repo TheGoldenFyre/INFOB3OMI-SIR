@@ -9,7 +9,7 @@ class Program
     static double LOSE_IMMUNITY_CHANCE = 0.03;
 
     static double START_INFECTION_PERC = 0.1;
-    static double START_BARRIER_PERC = 0.0;
+    static double START_BARRIER_PERC = 0.01;
 
     static int ITERATION_COUNT = 1000;
     static int TEST_COUNT = 100;
@@ -37,16 +37,20 @@ class Program
 
         string[] output = new string[ITERATION_COUNT + 1];
         string header = "";
-        for (int i = 0; i < TEST_COUNT; i++) header += (i == TEST_COUNT - 1) ? $"Run {i}" : $"Run {i}, ";
+        for (int i = 0; i < TEST_COUNT; i++) header += $"Run {i}, ";
+        header += "AVG";
         output[0] = header;
 
         for (int i = 0; i < ITERATION_COUNT; i++)
         {
             string s = "";
+            long total = 0;
             for (int j = 0; j < TEST_COUNT; j++)
             {
-                s += (j == TEST_COUNT-1) ? $"{data[j][i]}" : $"{data[j][i]}, ";
+                total += data[j][i];
+                s += $"{data[j][i]}, ";
             }
+            s += total / (double)TEST_COUNT;
             output[i+1] = s;
         }
 
