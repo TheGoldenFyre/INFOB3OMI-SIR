@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace OSIR
 {
@@ -75,7 +76,8 @@ namespace OSIR
                     }
                 }
 
-                if (rnd.NextDouble() < Math.Pow(1 - CHANCE_INF, c))
+                double chance = Math.Pow(1 - CHANCE_INF, c);
+                if (rnd.NextDouble() < chance)
                     return State.Susceptible;
                 else
                 {
@@ -98,8 +100,47 @@ namespace OSIR
         // Blocks off a certain percentage of connections
         public void AddObstructions(double p)
         {
-            int c = (int)(width * height * 4 * p);
-            AddObstructions(c);
+            if (p < 0.5)
+            {
+                int c = (int)((3 * width * height - 2 * width - 2 * height + 1) * p);
+                AddObstructions(c);
+            }
+            else
+            {
+                int c = (int)((3 * width * height - 2 * width - 2 * height + 1) * (1 - p));
+                for (int x = 0; x < width; x++)
+                    for (int y = 0; y < height; y++)
+                        for (int b = 0; b < 9; b++)
+                            obstruction[x, y, b] = true;
+                RemoveObstructions(c);
+            }
+        }
+
+        private void RemoveObstructions(int c)
+        {
+            for (int i = 0; i < c; i++)
+            {
+                while (true)
+                {
+                    int rndX = (int)(rnd.NextDouble() * width);
+                    int rndY = (int)(rnd.NextDouble() * height);
+                    int rndN = (int)(rnd.NextDouble() * 8);
+                    if (rndN > 3) rndN += 1; // We want to skip the center tile, so +1.
+
+                    if (obstruction[rndX, rndY, rndN])
+                    {
+                        obstruction[rndX, rndY, rndN] = false;
+                        // we must now also find the neighbour that we need to set to true: 
+                        int dx = rndN % 3 - 1;
+                        int dy = rndN / 3 - 1;
+                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height)
+                        {
+                            obstruction[rndX + dx, rndY + dy, 8 - rndN] = false;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         public void AddObstructions(int c)
@@ -119,9 +160,11 @@ namespace OSIR
                         // we must now also find the neighbour that we need to set to true: 
                         int dx = rndN % 3 - 1;
                         int dy = rndN / 3 - 1;
-                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height) 
+                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height)
+                        {
                             obstruction[rndX+dx, rndY + dy, 8-rndN] = true;
-                        break;
+                            break;
+                        }
                     }
                 }
             }
