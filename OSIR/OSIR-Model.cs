@@ -22,6 +22,7 @@ namespace OSIR
         private int width;
         private int height;
         private int SDIM;
+        private int connectionCount;
         private double CHANCE_INF;
         private double CHANCE_REC;
         private double CHANCE_LIM;
@@ -46,6 +47,23 @@ namespace OSIR
             rnd = new Random();
             bmp = new Bitmap(w * SDIM, h * SDIM);
 
+            connectionCount = ConnectionCount();
+        }
+
+        private int ConnectionCount()
+        {
+            int c = 0;
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (x + 1 < width) c++;
+                    if (y + 1 < height) c++;
+                    if (x + 1 < width && y + 1 < height) c++;
+                    if (x - 1 >= 0 && y + 1 < height) c++;
+                }
+            }
+            return c;
         }
 
         public void Iterate()
@@ -75,7 +93,7 @@ namespace OSIR
                         // Bound check
                         if (x + dx >= 0 && y + dy >= 0 && x + dx < width && y + dy < height)
                         {
-                            if (state[x + dx, y + dy] == State.Infectious && !obstruction[x, y, (dx + 1) * 3 + dy + 1]) c++;
+                            if (state[x + dx, y + dy] == State.Infectious && !obstruction[x, y, (dy + 1) * 3 + dx + 1]) c++;
                         }
                     }
                 }
@@ -136,37 +154,46 @@ namespace OSIR
             return bmp;
         }
 
-        // Blocks off a certain percentage of connections
         public void AddObstructions(double p)
         {
-            int c = (int)(width * height * 4 * p);
+            if (p < 0) p = 0;
+            if (p > 1) p = 1;
+
+            int c = (int)(connectionCount * p);
             AddObstructions(c);
         }
 
         public void AddObstructions(int c)
         {
-            for (int i = 0; i < c; i++)
-            {
-                while (true)
-                {
-                    int rndX = (int)(rnd.NextDouble() * width);
-                    int rndY = (int)(rnd.NextDouble() * height);
-                    int rndN = (int)(rnd.NextDouble() * 8);
-                    if (rndN > 3) rndN += 1; // We want to skip the center tile, so +1.
+            int totalRemaining = connectionCount;
 
-                    if (!obstruction[rndX, rndY, rndN])
-                    {
-                        obstruction[rndX, rndY, rndN] = true;
-                        // we must now also find the neighbour that we need to set to true: 
-                        int dx = rndN % 3 - 1;
-                        int dy = rndN / 3 - 1;
-                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height) 
-                            obstruction[rndX+dx, rndY + dy, 8-rndN] = true;
-                        break;
-                    }
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (x + 1 < width) TryAddObstruction(x, y, 5, ref c, ref totalRemaining);
+                    if (y + 1 < height) TryAddObstruction(x, y, 7, ref c, ref totalRemaining);
+                    if (x + 1 < width && y + 1 < height) TryAddObstruction(x, y, 8, ref c, ref totalRemaining);
+                    if (x - 1 >= 0 && y + 1 < height) TryAddObstruction(x, y, 6, ref c, ref totalRemaining);
                 }
             }
         }
+
+        private void TryAddObstruction(int x, int y, int neighbour, ref int leftToPick, ref int totalLeft)
+        {
+            if (rnd.NextDouble() < leftToPick / (double)totalLeft)
+            {
+                // We add the connection
+                leftToPick--;
+                obstruction[x, y, neighbour] = true;
+                int dx = neighbour % 3 - 1;
+                int dy = neighbour / 3 - 1;
+                obstruction[x + dx, y + dy, 8 - neighbour] = true;
+            }
+
+            totalLeft--;
+        }
+
 
         // Infects a certain percentage of the population
         public void AddInfections(double p)

@@ -13,17 +13,17 @@ class Program
     static double LOSE_IMMUNITY_CHANCE = 0.03;
 
     static double START_INFECTION_PERC = 0.1;
-    static double START_BARRIER_PERC = 0.51;
+    static double START_BARRIER_PERC = 0;
 
     static int ITERATION_COUNT = 1000;
-    static int TEST_COUNT = 200;
+    static int TEST_COUNT = 100;
 
     static int THREAD_COUNT = 12;
 
     public static void Main(string[] args)
     {
-        //for (int y = 0; y < 37; y++)
-        //{
+        for (int y = 0; y < 37; y++)
+        {
             // Determine the time, and use the file name to save information about the tests
             string fileName = DateTime.Now.ToString("MM-dd HH.mm.ss") + $" W{WIDTH} H{HEIGHT} I{INFECTION_CHANCE} R{RECOVERY_CHANCE} L{LOSE_IMMUNITY_CHANCE} SI{START_INFECTION_PERC} SB{START_BARRIER_PERC}.csv";
             int[][] data = new int[TEST_COUNT][];
@@ -35,8 +35,9 @@ class Program
                 int u = i;
                 Thread x = new Thread(_ => Run(START_BARRIER_PERC, u, ref data, ref threadsDone));
                 x.Start();
-
             }
+
+           // Run(START_BARRIER_PERC, 0, ref data, ref threadsDone);
 
             // Spin untill threads are done
             while (!threadsDone.All(x => x)) ;
@@ -62,9 +63,9 @@ class Program
 
             File.WriteAllLines($"./output/{fileName}", output);
 
-        //    if (y < 20) START_BARRIER_PERC += 0.01;
-        //    else START_BARRIER_PERC += 0.05;
-        //}
+            if (y < 20) START_BARRIER_PERC += 0.01;
+            else START_BARRIER_PERC += 0.05;
+        }
     }
 
     public static void Run(double bp, int index, ref int[][] data, ref bool[] done)

@@ -19,6 +19,7 @@ namespace OSIR
         private int width;
         private int height;
         private int SDIM;
+        private int connectionCount;
         private double CHANCE_INF;
         private double CHANCE_REC;
         private double CHANCE_LIM;
@@ -39,7 +40,15 @@ namespace OSIR
             CHANCE_REC = crec;
             CHANCE_LIM = clim;
 
-            rnd = new Random();
+            connectionCount = ConnectionCount();
+
+             rnd = new Random();
+        }
+
+        // Determines the amount of total connections between specimens on the field.
+        private int ConnectionCount()
+        {
+            return (width - 1) * height + (height - 1) * width + 2 * (width - 1) * (height - 1);
         }
 
         public int Iterate()
@@ -71,13 +80,13 @@ namespace OSIR
                         // Bound check
                         if (x + dx >= 0 && y + dy >= 0 && x + dx < width && y + dy < height)
                         {
-                            if (state[x + dx, y + dy] == State.Infectious && !obstruction[x, y, (dx + 1) * 3 + dy + 1]) c++;
+                            if (state[x + dx, y + dy] == State.Infectious && !obstruction[x, y, (dy + 1) * 3 + dx + 1]) c++;
                         }
                     }
                 }
 
                 double chance = Math.Pow(1 - CHANCE_INF, c);
-                if (rnd.NextDouble() < chance)
+                if (c == 0 || rnd.NextDouble() < chance)
                     return State.Susceptible;
                 else
                 {
@@ -97,77 +106,50 @@ namespace OSIR
             return state[x, y];
         }
 
-        // Blocks off a certain percentage of connections
         public void AddObstructions(double p)
         {
-            if (p < 0.5)
-            {
-                int c = (int)((3 * width * height - 2 * width - 2 * height + 1) * p);
-                AddObstructions(c);
-            }
-            else
-            {
-                int c = (int)((3 * width * height - 2 * width - 2 * height + 1) * (1 - p));
-                for (int x = 0; x < width; x++)
-                    for (int y = 0; y < height; y++)
-                        for (int b = 0; b < 9; b++)
-                            obstruction[x, y, b] = true;
-                RemoveObstructions(c);
-            }
-        }
+            if (p < 0) p = 0;
+            if (p > 1) p = 1;
 
-        private void RemoveObstructions(int c)
-        {
-            for (int i = 0; i < c; i++)
-            {
-                while (true)
-                {
-                    int rndX = (int)(rnd.NextDouble() * width);
-                    int rndY = (int)(rnd.NextDouble() * height);
-                    int rndN = (int)(rnd.NextDouble() * 8);
-                    if (rndN > 3) rndN += 1; // We want to skip the center tile, so +1.
+            int c = (int)(connectionCount * p);
+            AddObstructions(c);
 
-                    if (obstruction[rndX, rndY, rndN])
-                    {
-                        obstruction[rndX, rndY, rndN] = false;
-                        // we must now also find the neighbour that we need to set to true: 
-                        int dx = rndN % 3 - 1;
-                        int dy = rndN / 3 - 1;
-                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height)
-                        {
-                            obstruction[rndX + dx, rndY + dy, 8 - rndN] = false;
-                            break;
-                        }
-                    }
-                }
-            }
+
+            //for (int x = 0; x < width; x++)
+            //    for (int y = 0; y < height; y++)
+            //        for (int z = 0; z < 9; z++)
+            //            if (z != 4 && !obstruction[x, y, z]) Console.WriteLine($"x: {x}, y: {y}, z: {z}");
         }
 
         public void AddObstructions(int c)
         {
-            for (int i = 0; i < c; i++)
-            {
-                while (true)
-                {
-                    int rndX = (int)(rnd.NextDouble() * width);
-                    int rndY = (int)(rnd.NextDouble() * height);
-                    int rndN = (int)(rnd.NextDouble() * 8);
-                    if (rndN > 3) rndN += 1; // We want to skip the center tile, so +1.
+            int totalRemaining = connectionCount;
 
-                    if (!obstruction[rndX, rndY, rndN])
-                    {
-                        obstruction[rndX, rndY, rndN] = true;
-                        // we must now also find the neighbour that we need to set to true: 
-                        int dx = rndN % 3 - 1;
-                        int dy = rndN / 3 - 1;
-                        if (rndX + dx >= 0 && rndY + dy >= 0 && rndX + dx < width && rndY + dy < height)
-                        {
-                            obstruction[rndX+dx, rndY + dy, 8-rndN] = true;
-                            break;
-                        }
-                    }
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    if (x + 1 < width) TryAddObstruction(x, y, 5, ref c, ref totalRemaining);
+                    if (y + 1 < height) TryAddObstruction(x, y, 7, ref c, ref totalRemaining);
+                    if (x + 1 < width && y + 1 < height) TryAddObstruction(x, y, 8, ref c, ref totalRemaining);
+                    if (x - 1 >= 0 && y + 1 < height) TryAddObstruction(x, y, 6, ref c, ref totalRemaining);
                 }
             }
+        }
+
+        private void TryAddObstruction(int x, int y, int neighbour, ref int leftToPick, ref int totalLeft)
+        {
+            if (rnd.NextDouble() < leftToPick / (double)totalLeft)
+            {
+                // We add the connection
+                leftToPick--;
+                obstruction[x, y, neighbour] = true;
+                int dx = neighbour % 3 - 1;
+                int dy = neighbour / 3 - 1;
+                obstruction[x + dx, y + dy, 8 - neighbour] = true;
+            }
+
+            totalLeft--;
         }
 
         // Infects a certain percentage of the population
@@ -196,26 +178,26 @@ namespace OSIR
             }
         }
 
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder(width * height + height - 1);
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    string s;
-                    switch (state[x, y])
-                    {
-                        case State.Infectious:  s = "I"; break;
-                        case State.Recovered:   s = "R"; break;
-                        case State.Susceptible: s = "S"; break;
-                        default:                s = "X"; break;
-                    }
-                    sb.Append(s);
-                }
-                sb.Append("\n");
-            }
-            return sb.ToString();
-        }
+        //public override string ToString()
+        //{
+        //    StringBuilder sb = new StringBuilder(width * height + height - 1);
+        //    for (int y = 0; y < height; y++)
+        //    {
+        //        for (int x = 0; x < width; x++)
+        //        {
+        //            string s;
+        //            switch (state[x, y])
+        //            {
+        //                case State.Infectious:  s = "I"; break;
+        //                case State.Recovered:   s = "R"; break;
+        //                case State.Susceptible: s = "S"; break;
+        //                default:                s = "X"; break;
+        //            }
+        //            sb.Append(s);
+        //        }
+        //        sb.Append("\n");
+        //    }
+        //    return sb.ToString();
+        //}
     }
 }
