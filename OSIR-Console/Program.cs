@@ -22,8 +22,8 @@ class Program
 
     public static void Main(string[] args)
     {
-        for (int y = 0; y < 37; y++)
-        {
+        //for (int y = 0; y < 37; y++)
+        //{
             // Determine the time, and use the file name to save information about the tests
             string fileName = DateTime.Now.ToString("MM-dd HH.mm.ss") + $" W{WIDTH} H{HEIGHT} I{INFECTION_CHANCE} R{RECOVERY_CHANCE} L{LOSE_IMMUNITY_CHANCE} SI{START_INFECTION_PERC} SB{START_BARRIER_PERC}.csv";
             int[][] data = new int[TEST_COUNT][];
@@ -63,9 +63,9 @@ class Program
 
             File.WriteAllLines($"./output/{fileName}", output);
 
-            if (y < 20) START_BARRIER_PERC += 0.01;
-            else START_BARRIER_PERC += 0.05;
-        }
+            //if (y < 20) START_BARRIER_PERC += 0.01;
+            //else START_BARRIER_PERC += 0.05;
+        //}
     }
 
     public static void Run(double bp, int index, ref int[][] data, ref bool[] done)
